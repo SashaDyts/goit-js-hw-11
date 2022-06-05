@@ -4,6 +4,7 @@ import { ImagesApiService } from './fetch-images';
 import SimpleLightbox from 'simplelightbox';
 import 'simplelightbox/dist/simple-lightbox.min.css';
 import { refs } from './refs.js';
+import throttle from 'lodash.throttle';
 
 const imagesApiService = new ImagesApiService();
 // ------------------ Listeners ---------------------------------
@@ -11,12 +12,28 @@ refs.inputEl.addEventListener('focus', onInputElFocus);
 refs.inputEl.addEventListener('blur', onInputBlur);
 refs.formEl.addEventListener('submit', onFormElSubmit);
 refs.btnMoreEl.addEventListener('click', onBtnMoreElClick);
+window.addEventListener('scroll', throttle(onScroll, 1000));
+
+let enableInfo = true;
+
+function onScroll(event) {
+  if (
+    window.innerHeight + window.pageYOffset >= document.body.offsetHeight &&
+    refs.btnMoreEl.classList.contains('hide-btn') &&
+    enableInfo
+  ) {
+    enableInfo = false;
+
+    Notiflix.Notify.info(
+      "We're sorry, but you've reached the end of search results."
+    );
+  }
+}
 
 let galleryLightBox;
 
 function onFormElSubmit(event) {
   event.preventDefault();
-  console.dir(event.currentTarget);
   refs.inputEl.blur();
   deleteMarkup();
   hideBtn();
@@ -25,6 +42,9 @@ function onFormElSubmit(event) {
   imagesApiService.query = event.currentTarget.searchQuery.value;
 
   updateUi();
+  setTimeout(() => {
+    enableInfo = true;
+  }, 1000);
 }
 
 async function onBtnMoreElClick() {
@@ -130,9 +150,6 @@ function renderMarkup(images) {
 
 function reachedEndOfImages(images) {
   if (images.hits.length < imagesApiService.perPage) {
-    Notiflix.Notify.info(
-      "We're sorry, but you've reached the end of search results."
-    );
     hideBtn();
   }
 }
