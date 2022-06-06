@@ -12,9 +12,23 @@ refs.inputEl.addEventListener('focus', onInputElFocus);
 refs.inputEl.addEventListener('blur', onInputBlur);
 refs.formEl.addEventListener('submit', onFormElSubmit);
 refs.btnMoreEl.addEventListener('click', onBtnMoreElClick);
-window.addEventListener('scroll', throttle(onScroll, 1000));
+window.addEventListener('scroll', throttle(onScroll, 500));
 
 let enableInfo = true;
+
+Notiflix.Notify.init({
+  fontFamily: 'Roboto',
+  fontSize: '13px',
+  info: {
+    background: 'rgb(241, 212, 28)',
+    textColor: 'rgb(64, 28, 210)',
+    childClassName: 'notiflix-notify-info',
+    notiflixIconColor: 'rgb(119, 92, 230)',
+    fontAwesomeClassName: 'fas fa-info-circle',
+    fontAwesomeIconColor: 'rgba(0,0,0,0.2)',
+    backOverlayColor: 'rgba(38,192,211,0.2)',
+  },
+});
 
 function onScroll(event) {
   if (
@@ -48,12 +62,20 @@ function onFormElSubmit(event) {
 }
 
 async function onBtnMoreElClick() {
+  enableInfo = false;
   const images = await imagesApiService.fetchImages();
 
   renderMarkup(images);
 
   galleryLightBox.refresh();
+  const { height: cardHeight } = document
+    .querySelector('.gallery')
+    .firstElementChild.getBoundingClientRect();
 
+  window.scrollBy({
+    top: cardHeight * 1.9,
+    behavior: 'smooth',
+  });
   reachedEndOfImages(images);
 }
 
@@ -112,7 +134,9 @@ function onError() {
 }
 
 function hooray(totalHits) {
-  Notiflix.Notify.info(`Hooray! We found ${totalHits} images.`);
+  if (totalHits > 5) {
+    Notiflix.Notify.info(`Hooray! We found ${totalHits} images.`);
+  }
 }
 
 async function updateUi() {
@@ -122,6 +146,12 @@ async function updateUi() {
     if (images.hits.length === 0) {
       imagesApiService.searchColorTrue();
       return images.reject();
+    }
+
+    if (images.hits.length < 5) {
+      Notiflix.Notify.info(
+        "We're sorry, but you've reached the end of search results."
+      );
     }
 
     renderMarkup(images);
